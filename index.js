@@ -1,7 +1,7 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
 const db = require("./db/connection");
-require("console.table");
+// require("console.table");
 
 const mainMenu = async () => {
   const promptValue = await inquirer.prompt([
@@ -66,7 +66,7 @@ const mainMenu = async () => {
       addDepartment();
       break;
     case "UPDATE_ROLE":
-      updateRole();
+      updateEmpRole();
       break;
     case "EXIT":
       process.exit();
@@ -84,7 +84,9 @@ const viewEmployees = async () => {
 };
 
 const viewRoles = async () => {
-  const [roleData] = await db.query(`SELECT * FROM role`);
+  const [roleData] = await db.query(
+    `SELECT role.id, role.title AS job_title, department.name AS department, role.salary FROM role LEFT JOIN department ON role.department_id = department.id`
+  );
   console.table(roleData);
   mainMenu();
 };
@@ -146,7 +148,7 @@ const addRole = async () => {
       message: "What is the name of the role?",
     },
     {
-      type: "text",
+      type: "int",
       name: "salary",
       message: "What is the salary for this role?",
     },
@@ -193,6 +195,45 @@ const addDepartment = async () => {
   });
 
   console.log("The department has been added!");
+  mainMenu();
+};
+
+const updateEmpRole = async () => {
+  const [employeeData] = await db.query(`SELECT * FROM employee`);
+  console.table(employeeData);
+
+  const promptValue = await inquirer.prompt([
+    {
+      type: "text",
+      name: "employee_id",
+      message:
+        "Looking at the table above, please input the employee's id number from the employee you wish to update.",
+    },
+  ]);
+
+  const [roleData] = await db.query(`SELECT * FROM role`);
+  console.table(roleData);
+
+  const promptValueTwo = await inquirer.prompt([
+    {
+      type: "int",
+      name: "role_id",
+      message:
+        "Looking at the table above, please input the role id number for the role you would like to assign the employee.",
+    },
+  ]);
+
+  const sql = `UPDATE employee SET role_id = ? WHERE id = ?`;
+
+  const params = [promptValueTwo.role_id, promptValue.employee_id];
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+  });
+  console.log("Employee's role was updated!");
   mainMenu();
 };
 
