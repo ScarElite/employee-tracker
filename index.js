@@ -1,6 +1,7 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
 const db = require("./db/connection");
+require("console.table");
 
 const mainMenu = async () => {
   const promptValue = await inquirer.prompt([
@@ -75,7 +76,9 @@ const mainMenu = async () => {
 };
 
 const viewEmployees = async () => {
-  const [employeeData] = await db.query(`SELECT * FROM employee`);
+  const [employeeData] = await db.query(
+    `SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON employee.manager_id = manager.id`
+  );
   console.table(employeeData);
   mainMenu();
 };
@@ -87,7 +90,7 @@ const viewRoles = async () => {
 };
 
 const viewDepartments = async () => {
-  const [departmentData] = await db.query(`SELECT name FROM department`);
+  const [departmentData] = await db.query(`SELECT * FROM department`);
   console.table(departmentData);
   mainMenu();
 };
@@ -129,10 +132,68 @@ const addEmployee = async () => {
       console.log(err);
       return;
     }
-    console.log(result);
-    console.table(result);
-    mainMenu();
   });
+
+  console.log("Employee has been added!");
+  mainMenu();
+};
+
+const addRole = async () => {
+  const promptValue = await inquirer.prompt([
+    {
+      type: "text",
+      name: "name",
+      message: "What is the name of the role?",
+    },
+    {
+      type: "text",
+      name: "salary",
+      message: "What is the salary for this role?",
+    },
+    {
+      type: "text",
+      name: "department",
+      message: "What is the department this role falls under?",
+    },
+  ]);
+
+  const sql = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
+
+  const params = [promptValue.name, promptValue.salary, promptValue.department];
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+  });
+
+  console.log("A new role has been added!");
+  mainMenu();
+};
+
+const addDepartment = async () => {
+  const promptValue = await inquirer.prompt([
+    {
+      type: "text",
+      name: "name",
+      message: "What department do you want to add?",
+    },
+  ]);
+
+  const sql = `INSERT INTO department (name) VALUES (?)`;
+
+  const params = [promptValue.name];
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+  });
+
+  console.log("The department has been added!");
+  mainMenu();
 };
 
 mainMenu();
