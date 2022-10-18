@@ -39,6 +39,18 @@ const mainMenu = async () => {
           value: "UPDATE_ROLE",
         },
         {
+          name: "Update an Employee's manager",
+          value: "UPDATE_EMPLOYEE_MANAGER",
+        },
+        {
+          name: "View employees by manager",
+          value: "VIEW_EMPLOYEE_BY_MANAGER",
+        },
+        {
+          name: "View employees by department",
+          value: "VIEW_EMPLOYEE_BY_DEPARTMENT",
+        },
+        {
           name: "Exit",
           value: "EXIT",
         },
@@ -68,6 +80,15 @@ const mainMenu = async () => {
     case "UPDATE_ROLE":
       updateEmpRole();
       break;
+    case "UPDATE_EMPLOYEE_MANAGER":
+      updateEmployeeManager();
+      break;
+    case "VIEW_EMPLOYEE_BY_MANAGER":
+      viewEmpByManager();
+      break;
+    case "VIEW_EMPLOYEE_BY_DEPARTMENT":
+      viewEmpByDepartment();
+      break;
     case "EXIT":
       process.exit();
     default:
@@ -77,7 +98,17 @@ const mainMenu = async () => {
 
 const viewEmployees = async () => {
   const [employeeData] = await db.query(
-    `SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON employee.manager_id = manager.id`
+    `SELECT employee.id, 
+    employee.first_name,
+    employee.last_name, 
+    role.title, 
+    department.name AS department, 
+    role.salary,
+    CONCAT (manager.first_name, " ", manager.last_name) AS manager
+    FROM employee 
+    LEFT JOIN role ON employee.role_id = role.id 
+    LEFT JOIN department ON role.department_id = department.id
+    LEFT JOIN employee manager ON employee.manager_id = manager.id`
   );
   console.table(employeeData);
   mainMenu();
@@ -235,6 +266,84 @@ const updateEmpRole = async () => {
   });
   console.log("Employee's role was updated!");
   mainMenu();
+};
+
+const updateEmployeeManager = async () => {
+  const [employeeData] = await db.query(`SELECT * FROM employee`);
+  console.table(employeeData);
+
+  const promptValue = await inquirer.prompt([
+    {
+      type: "text",
+      name: "employee_id",
+      message:
+        "Looking at the table above, please input the employee's id number you wish to update their manager.",
+    },
+    {
+      type: "int",
+      name: "manager_id",
+      message:
+        "Input the manager's id number you would like to assign to this employee",
+    },
+  ]);
+
+  const sql = `UPDATE employee SET manager_id = ? WHERE id = ?`;
+
+  const params = [promptValue.manager_id, promptValue.employee_id];
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+  });
+  console.log("Employee's manager was updated!");
+  mainMenu();
+};
+
+const viewEmpByManager = async () => {
+  const [employeeData] = await db.query(
+    `SELECT employee.id, 
+    employee.first_name, 
+    employee.last_name, 
+    role.title, 
+    department.name AS department, 
+    role.salary, 
+    CONCAT (manager.first_name, " ", manager.last_name) AS manager 
+    FROM employee 
+    LEFT JOIN role ON role.id = employee.role_id 
+    LEFT JOIN department ON department.id = role.department_id
+    WHERE manager_id = ?;`
+  );
+  console.table(employeeData);
+
+  const promptValue = await inquirer.prompt([
+    {
+      type: "int",
+      name: "manager_id",
+      message: "What is the manager's id number?",
+    },
+  ]);
+
+  const sql = `SELECT *
+    FROM employee
+    WHERE manager_id = ?;`;
+
+  const params = [promptValue.manager_id];
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    console.table(result);
+  });
+  console.log("result");
+  mainMenu();
+};
+
+const viewEmpByDepartment = async () => {
+  const promptValue = await inquirer.prompt([]);
 };
 
 mainMenu();
