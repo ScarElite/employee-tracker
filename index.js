@@ -1,8 +1,11 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
+
+// Requires the connection.js file which uses the login info to connect to mysql
 const db = require("./db/connection");
 // require("console.table");
 
+// The main menu with all of the inquirer prompts
 const mainMenu = async () => {
   const promptValue = await inquirer.prompt([
     {
@@ -43,14 +46,6 @@ const mainMenu = async () => {
           value: "UPDATE_EMPLOYEE_MANAGER",
         },
         {
-          name: "View employees by manager",
-          value: "VIEW_EMPLOYEE_BY_MANAGER",
-        },
-        {
-          name: "View employees by department",
-          value: "VIEW_EMPLOYEE_BY_DEPARTMENT",
-        },
-        {
           name: "Exit",
           value: "EXIT",
         },
@@ -83,12 +78,6 @@ const mainMenu = async () => {
     case "UPDATE_EMPLOYEE_MANAGER":
       updateEmployeeManager();
       break;
-    case "VIEW_EMPLOYEE_BY_MANAGER":
-      viewEmpByManager();
-      break;
-    case "VIEW_EMPLOYEE_BY_DEPARTMENT":
-      viewEmpByDepartment();
-      break;
     case "EXIT":
       process.exit();
     default:
@@ -96,7 +85,9 @@ const mainMenu = async () => {
   }
 };
 
+// Views all employees and displays it in a table
 const viewEmployees = async () => {
+  // Creates a table with the employee's first name, last name, title of their role, their salary, and the department their role is in. Also creates a column with their manager's first and last name and id number.
   const [employeeData] = await db.query(
     `SELECT employee.id, 
     employee.first_name,
@@ -114,7 +105,9 @@ const viewEmployees = async () => {
   mainMenu();
 };
 
+// Views all roles and displays it in a table
 const viewRoles = async () => {
+  // Creates a table that displays the role id number, the title of the role, the department that role is a part of, and the id number of the department.
   const [roleData] = await db.query(
     `SELECT role.id, role.title AS job_title, department.name AS department, role.salary FROM role LEFT JOIN department ON role.department_id = department.id`
   );
@@ -122,12 +115,15 @@ const viewRoles = async () => {
   mainMenu();
 };
 
+// Views all departments and display it in a table
 const viewDepartments = async () => {
+  // Shows the names of all the departments and their id number
   const [departmentData] = await db.query(`SELECT * FROM department`);
   console.table(departmentData);
   mainMenu();
 };
 
+// Add an employee by taking in the information provided by the user using the inquirer prompts
 const addEmployee = async () => {
   const promptValue = await inquirer.prompt([
     {
@@ -171,6 +167,7 @@ const addEmployee = async () => {
   mainMenu();
 };
 
+// Add a role by taking in the information provided by the user using the inquirer prompts
 const addRole = async () => {
   const promptValue = await inquirer.prompt([
     {
@@ -205,6 +202,7 @@ const addRole = async () => {
   mainMenu();
 };
 
+// Add a department by taking in the information provided by the user using the inquirer prompts
 const addDepartment = async () => {
   const promptValue = await inquirer.prompt([
     {
@@ -229,6 +227,7 @@ const addDepartment = async () => {
   mainMenu();
 };
 
+// Update an employee by taking in the information provided by the user using the inquirer prompts and inserting it into the employee table
 const updateEmpRole = async () => {
   const [employeeData] = await db.query(`SELECT * FROM employee`);
   console.table(employeeData);
@@ -268,6 +267,7 @@ const updateEmpRole = async () => {
   mainMenu();
 };
 
+// Update an employee' manager by taking in the information provided by the user using the inquirer prompts and inserting the information into the employee table
 const updateEmployeeManager = async () => {
   const [employeeData] = await db.query(`SELECT * FROM employee`);
   console.table(employeeData);
@@ -299,51 +299,6 @@ const updateEmployeeManager = async () => {
   });
   console.log("Employee's manager was updated!");
   mainMenu();
-};
-
-const viewEmpByManager = async () => {
-  const [employeeData] = await db.query(
-    `SELECT employee.id, 
-    employee.first_name, 
-    employee.last_name, 
-    role.title, 
-    department.name AS department, 
-    role.salary, 
-    CONCAT (manager.first_name, " ", manager.last_name) AS manager 
-    FROM employee 
-    LEFT JOIN role ON role.id = employee.role_id 
-    LEFT JOIN department ON department.id = role.department_id
-    WHERE manager_id = ?;`
-  );
-  console.table(employeeData);
-
-  const promptValue = await inquirer.prompt([
-    {
-      type: "int",
-      name: "manager_id",
-      message: "What is the manager's id number?",
-    },
-  ]);
-
-  const sql = `SELECT *
-    FROM employee
-    WHERE manager_id = ?;`;
-
-  const params = [promptValue.manager_id];
-
-  db.query(sql, params, (err, result) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
-    console.table(result);
-  });
-  console.log("result");
-  mainMenu();
-};
-
-const viewEmpByDepartment = async () => {
-  const promptValue = await inquirer.prompt([]);
 };
 
 mainMenu();
