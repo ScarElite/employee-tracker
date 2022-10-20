@@ -14,36 +14,20 @@ const mainMenu = async () => {
       message: "What would you like to do?",
       choices: [
         {
-          name: "View All Employees",
-          value: "VIEW_EMPLOYEES",
+          name: "View",
+          value: "VIEW",
         },
         {
-          name: "View All Roles",
-          value: "VIEW_ROLES",
+          name: "Add",
+          value: "ADD",
         },
         {
-          name: "View All Departments",
-          value: "VIEW_DEPARTMENTS",
+          name: "Update",
+          value: "UPDATE",
         },
         {
-          name: "Add an employee",
-          value: "ADD_EMPLOYEE",
-        },
-        {
-          name: "Add a role",
-          value: "ADD_ROLE",
-        },
-        {
-          name: "Add a department",
-          value: "ADD_DEPARTMENT",
-        },
-        {
-          name: "Update an employee's role",
-          value: "UPDATE_ROLE",
-        },
-        {
-          name: "Update an Employee's manager",
-          value: "UPDATE_EMPLOYEE_MANAGER",
+          name: "Delete",
+          value: "DELETE",
         },
         {
           name: "Exit",
@@ -54,29 +38,17 @@ const mainMenu = async () => {
   ]);
 
   switch (promptValue.choice) {
-    case "VIEW_EMPLOYEES":
-      viewEmployees();
+    case "VIEW":
+      selectViewAll();
       break;
-    case "VIEW_ROLES":
-      viewRoles();
+    case "ADD":
+      selectAdd();
       break;
-    case "VIEW_DEPARTMENTS":
-      viewDepartments();
+    case "UPDATE":
+      selectUpdate();
       break;
-    case "ADD_EMPLOYEE":
-      addEmployee();
-      break;
-    case "ADD_ROLE":
-      addRole();
-      break;
-    case "ADD_DEPARTMENT":
-      addDepartment();
-      break;
-    case "UPDATE_ROLE":
-      updateEmpRole();
-      break;
-    case "UPDATE_EMPLOYEE_MANAGER":
-      updateEmployeeManager();
+    case "DELETE":
+      selectDelete();
       break;
     case "EXIT":
       process.exit();
@@ -264,12 +236,39 @@ const updateEmpRole = async () => {
     }
   });
   console.log("Employee's role was updated!");
+
+  // Shows a table with the updated table of employees
+  const [newEmployeeData] = await db.query(`SELECT employee.id, 
+    employee.first_name,
+    employee.last_name, 
+    role.title, 
+    department.name AS department, 
+    role.salary,
+    CONCAT (manager.first_name, " ", manager.last_name) AS manager
+    FROM employee 
+    LEFT JOIN role ON employee.role_id = role.id 
+    LEFT JOIN department ON role.department_id = department.id
+    LEFT JOIN employee manager ON employee.manager_id = manager.id
+    `);
+  console.table(newEmployeeData);
+
   mainMenu();
 };
 
 // Update an employee' manager by taking in the information provided by the user using the inquirer prompts and inserting the information into the employee table
 const updateEmployeeManager = async () => {
-  const [employeeData] = await db.query(`SELECT * FROM employee`);
+  const [employeeData] = await db.query(`SELECT employee.id, 
+    employee.first_name,
+    employee.last_name, 
+    role.title, 
+    department.name AS department, 
+    role.salary,
+    CONCAT (manager.first_name, " ", manager.last_name) AS manager
+    FROM employee 
+    LEFT JOIN role ON employee.role_id = role.id 
+    LEFT JOIN department ON role.department_id = department.id
+    LEFT JOIN employee manager ON employee.manager_id = manager.id
+    `);
   console.table(employeeData);
 
   const promptValue = await inquirer.prompt([
@@ -283,7 +282,7 @@ const updateEmployeeManager = async () => {
       type: "int",
       name: "manager_id",
       message:
-        "Input the manager's id number you would like to assign to this employee",
+        "Looking at the table above, input the employee's id number you would like to assign as the manager of the employee",
     },
   ]);
 
@@ -298,6 +297,358 @@ const updateEmployeeManager = async () => {
     }
   });
   console.log("Employee's manager was updated!");
+
+  // Shows a table with the updated table of employees
+  const [newEmployeeData] = await db.query(`SELECT employee.id, 
+    employee.first_name,
+    employee.last_name, 
+    role.title, 
+    department.name AS department, 
+    role.salary,
+    CONCAT (manager.first_name, " ", manager.last_name) AS manager
+    FROM employee 
+    LEFT JOIN role ON employee.role_id = role.id 
+    LEFT JOIN department ON role.department_id = department.id
+    LEFT JOIN employee manager ON employee.manager_id = manager.id
+    ORDER BY manager`);
+  console.table(newEmployeeData);
+
+  mainMenu();
+};
+
+// Views all employees and displays it in a table and orders the employees by manager
+const viewEmpByManager = async () => {
+  // Creates a table with the employee's first name, last name, title of their role, their salary, and the department their role is in. Also creates a column with their manager's first and last name and id number.
+  const [employeeData] = await db.query(
+    `SELECT employee.id, 
+    employee.first_name,
+    employee.last_name, 
+    role.title, 
+    department.name AS department, 
+    role.salary,
+    CONCAT (manager.first_name, " ", manager.last_name) AS manager
+    FROM employee 
+    LEFT JOIN role ON employee.role_id = role.id 
+    LEFT JOIN department ON role.department_id = department.id
+    LEFT JOIN employee manager ON employee.manager_id = manager.id
+    ORDER BY manager`
+  );
+  console.table(employeeData);
+  mainMenu();
+};
+
+// Views all employees and displays it in a table and orders the employees by the department they're in
+const viewEmpByDepartment = async () => {
+  // Creates a table with the employee's first name, last name, title of their role, their salary, and the department their role is in. Also creates a column with their manager's first and last name and id number.
+  const [employeeData] = await db.query(
+    `SELECT department.name AS department,
+    employee.id, 
+    employee.first_name,
+    employee.last_name, 
+    role.title,  
+    role.salary,
+    CONCAT (manager.first_name, " ", manager.last_name) AS manager
+    FROM employee 
+    LEFT JOIN role ON employee.role_id = role.id 
+    LEFT JOIN department ON role.department_id = department.id
+    LEFT JOIN employee manager ON employee.manager_id = manager.id
+    ORDER BY department`
+  );
+  console.table(employeeData);
+  mainMenu();
+};
+
+const selectViewAll = async () => {
+  const promptValue = await inquirer.prompt([
+    {
+      type: "list",
+      name: "choice",
+      message: "What do you want to view?",
+      choices: [
+        {
+          name: "View All Employees",
+          value: "VIEW_EMPLOYEES",
+        },
+        {
+          name: "View All Roles",
+          value: "VIEW_ROLES",
+        },
+        {
+          name: "View All Departments",
+          value: "VIEW_DEPARTMENTS",
+        },
+        {
+          name: "View Employees By Manager",
+          value: "VIEW_EMPLOYEES_BY_MANAGER",
+        },
+        {
+          name: "View Employees By Department",
+          value: "VIEW_EMPLOYEES_BY_DEPARTMENT",
+        },
+        {
+          name: "Exit",
+          value: "EXIT",
+        },
+      ],
+    },
+  ]);
+
+  switch (promptValue.choice) {
+    case "VIEW_EMPLOYEES":
+      viewEmployees();
+      break;
+    case "VIEW_ROLES":
+      viewRoles();
+      break;
+    case "VIEW_DEPARTMENTS":
+      viewDepartments();
+      break;
+    case "VIEW_EMPLOYEES_BY_MANAGER":
+      viewEmpByManager();
+      break;
+    case "VIEW_EMPLOYEES_BY_DEPARTMENT":
+      viewEmpByDepartment();
+      break;
+    case "EXIT":
+      exitMainMenu();
+    default:
+      exitMainMenu();
+  }
+};
+
+const selectAdd = async () => {
+  const promptValue = await inquirer.prompt([
+    {
+      type: "list",
+      name: "choice",
+      message: "What do you want to add?",
+      choices: [
+        {
+          name: "Add An Employee",
+          value: "ADD_EMPLOYEE",
+        },
+        {
+          name: "Add A Role",
+          value: "ADD_ROLE",
+        },
+        {
+          name: "Add A Department",
+          value: "ADD_DEPARTMENT",
+        },
+        {
+          name: "Exit",
+          value: "EXIT",
+        },
+      ],
+    },
+  ]);
+
+  switch (promptValue.choice) {
+    case "ADD_EMPLOYEE":
+      addEmployee();
+      break;
+    case "ADD_ROLE":
+      addRole();
+      break;
+    case "ADD_DEPARTMENT":
+      addDepartment();
+      break;
+    case "EXIT":
+      exitMainMenu();
+    default:
+      exitMainMenu();
+  }
+};
+
+const selectUpdate = async () => {
+  const promptValue = await inquirer.prompt([
+    {
+      type: "list",
+      name: "choice",
+      message: "What do you want to update?",
+      choices: [
+        {
+          name: "Update An Employee's Manager",
+          value: "UPDATE_EMPLOYEE_MANAGER",
+        },
+        {
+          name: "Update An Employee's Role",
+          value: "UPDATE_EMPLOYEE_ROLE",
+        },
+        {
+          name: "Exit",
+          value: "EXIT",
+        },
+      ],
+    },
+  ]);
+
+  switch (promptValue.choice) {
+    case "UPDATE_EMPLOYEE_MANAGER":
+      updateEmployeeManager();
+      break;
+    case "UPDATE_EMPLOYEE_ROLE":
+      updateEmpRole();
+      break;
+    case "EXIT":
+      exitMainMenu();
+    default:
+      exitMainMenu();
+  }
+};
+
+const selectDelete = async () => {
+  const promptValue = await inquirer.prompt([
+    {
+      type: "list",
+      name: "choice",
+      message: "What do you want to delete?",
+      choices: [
+        {
+          name: "Delete an employee",
+          value: "DELETE_EMPLOYEE",
+        },
+        {
+          name: "Delete a role",
+          value: "DELETE_ROLE",
+        },
+        {
+          name: "Delete a department",
+          value: "DELETE_DEPARTMENT",
+        },
+        {
+          name: "Exit",
+          value: "EXIT",
+        },
+      ],
+    },
+  ]);
+
+  switch (promptValue.choice) {
+    case "DELETE_EMPLOYEE":
+      deleteEmployee();
+      break;
+    case "DELETE_ROLE":
+      deleteRole();
+      break;
+    case "DELETE_DEPARTMENT":
+      deleteDepartment();
+      break;
+    case "EXIT":
+      exitMainMenu();
+    default:
+      exitMainMenu();
+  }
+};
+
+// Deletes an employee from the database
+const deleteEmployee = async () => {
+  const [employeeData] = await db.query(`SELECT * FROM employee`);
+  console.table(employeeData);
+
+  const promptValue = await inquirer.prompt([
+    {
+      type: "int",
+      name: "employee_id",
+      message:
+        "Looking at the table above, please input the employee's id number you wish to delete.",
+    },
+  ]);
+
+  const sql = `DELETE FROM employee 
+    WHERE employee.id = (?)`;
+
+  const params = [promptValue.employee_id];
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+  });
+
+  console.log("An employee was successfully deleted!");
+
+  // Shows a table with the updated table of employees
+  const [newEmployeeData] = await db.query(`SELECT * FROM employee`);
+  console.table(newEmployeeData);
+
+  mainMenu();
+};
+
+// Deletes a role from the database
+const deleteRole = async () => {
+  const [roleData] = await db.query(`SELECT * FROM role`);
+  console.table(roleData);
+
+  const promptValue = await inquirer.prompt([
+    {
+      type: "int",
+      name: "role_id",
+      message:
+        "Looking at the table above, please input the role's id number you wish to delete.",
+    },
+  ]);
+
+  const sql = `DELETE FROM role 
+    WHERE role.id = (?)`;
+
+  const params = [promptValue.role_id];
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+  });
+
+  console.log("A role was successfully deleted!");
+
+  // Shows a table with the updated table of roles
+  const [newRoleData] = await db.query(`SELECT * FROM role`);
+  console.table(newRoleData);
+
+  mainMenu();
+};
+
+// Deletes a department from the database
+const deleteDepartment = async () => {
+  const [departmentData] = await db.query(`SELECT * FROM department`);
+  console.table(departmentData);
+
+  const promptValue = await inquirer.prompt([
+    {
+      type: "int",
+      name: "department_id",
+      message:
+        "Looking at the table above, please input the department's id number you wish to delete.",
+    },
+  ]);
+
+  const sql = `DELETE FROM department 
+    WHERE department.id = (?)`;
+
+  const params = [promptValue.department_id];
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+  });
+
+  console.log("A department was successfully deleted!");
+
+  // Shows a table with the updated table of departments
+  const [newDepartmentData] = await db.query(`SELECT * FROM department`);
+  console.table(newDepartmentData);
+
+  mainMenu();
+};
+
+// Calls the main menu so the user can exit out of viewing, adding, deleting, and/or updating and go back to the main menu instead of exiting the application entirely
+const exitMainMenu = () => {
+  console.log("===============================================");
   mainMenu();
 };
 
