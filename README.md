@@ -13,7 +13,7 @@ This application was created to provide you with a way to keep track of all of y
 This application is dependant on Node.js, Inquirer.js, and MySQL. Make sure to also add a .env file to hold your MySQL username and password so that private information is kept secure.
 
 ## Walkthrough Video
-
+https://drive.google.com/file/d/1AK18xs1A4Yd1CgMcTgBxltXCbY7eyC2x/view
 
 ## Here's a preview of what the application looks like!
 ![](assets/images/Capture_25.PNG)
